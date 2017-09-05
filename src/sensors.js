@@ -1,9 +1,10 @@
 import { NativeModules, DeviceEventEmitter } from 'react-native';
 import Rx from 'rxjs/Rx';
-const { Gyroscope: GyroNative, Accelerometer: AccNative } = NativeModules;
+const { DeviceMotion: DevNative, Gyroscope: GyroNative, Accelerometer: AccNative  } = NativeModules;
 
 const handle = {
   Accelerometer: AccNative,
+  DeviceMotion: DevNative,
   Gyroscope: GyroNative,
 };
 
@@ -52,9 +53,11 @@ function createSensorMonitorCreator(sensorType) {
 // TODO: lazily intialize them (maybe via getter)
 const Accelerometer = createSensorMonitorCreator('Accelerometer');
 const Gyroscope = createSensorMonitorCreator('Gyroscope');
+const DeviceMotion = createSensorMonitorCreator('DeviceMotion');
 const Magnetometer = createSensorMonitorCreator('Magnetometer');
 
 export default {
   Accelerometer,
   Gyroscope,
+  DeviceMotion
 };
