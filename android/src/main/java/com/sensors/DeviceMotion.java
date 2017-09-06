@@ -25,7 +25,7 @@ public class DeviceMotion extends ReactContextBaseJavaModule implements SensorEv
         super(reactContext);
         this.reactContext = reactContext;
         this.sensorManager = (SensorManager)reactContext.getSystemService(reactContext.SENSOR_SERVICE);
-        this.sensor = this.sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        this.sensor = this.sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
     }
 
     // RN Methods
@@ -73,21 +73,9 @@ public class DeviceMotion extends ReactContextBaseJavaModule implements SensorEv
 
             Sensor mySensor = sensorEvent.sensor;
             WritableMap map = arguments.createMap();
-            if (mySensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-                float inR[] = new float[9];
-                float outR[] = new float[9];
-                float orientation[] = new float[3];
-                SensorManager.getRotationMatrixFromVector(inR,
-                        sensorEvent.values);
-                SensorManager
-                        .remapCoordinateSystem(inR,
-                                SensorManager.AXIS_X, SensorManager.AXIS_Z,
-                                outR);
-                SensorManager.getOrientation(outR, orientation);
-
-                map.putDouble("roll", (float) Math.toDegrees(orientation[0]));
-                map.putDouble("pitch", (float) Math.toDegrees(orientation[1]));
-                map.putDouble("yaw", (float) Math.toDegrees(orientation[2]));
+            if (mySensor.getType() == Sensor.TYPE_GRAVITY) {
+                Double rotation = (180 / Math.PI) * Math.atan2(sensorEvent.values[0], sensorEvent.values[1]);
+                map.putDouble("rotation", rotation);
                 map.putDouble("timestamp", (double) System.currentTimeMillis());
                 sendEvent("DeviceMotion", map);
             }
