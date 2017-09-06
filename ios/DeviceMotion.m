@@ -18,25 +18,25 @@ RCT_EXPORT_MODULE();
 
 - (id) init {
     self = [super init];
-    NSLog(@"Gyroscope");
+    NSLog(@"DeviceMotion");
 
     if (self) {
         self->_motionManager = [[CMMotionManager alloc] init];
-        //Gyroscope
-        if([self->_motionManager isGyroAvailable])
+        //DeviceMotion
+        if([self->_motionManager isDeviceMotionAvailable])
         {
-            NSLog(@"Gyroscope available");
-            /* Start the gyroscope if it is not active already */
-            if([self->_motionManager isGyroActive] == NO)
+            NSLog(@"DeviceMotion available");
+            /* Start the devicemotion if it is not active already */
+            if([self->_motionManager isDeviceMotionActive] == NO)
             {
-                NSLog(@"Gyroscope active");
+                NSLog(@"DeviceMotion active");
             } else {
-                NSLog(@"Gyroscope not active");
+                NSLog(@"DeviceMotion not active");
             }
         }
         else
         {
-            NSLog(@"Gyroscope not Available!");
+            NSLog(@"DeviceMotion not Available!");
         }
     }
     return self;
@@ -56,17 +56,19 @@ RCT_EXPORT_METHOD(getUpdateInterval:(RCTResponseSenderBlock) cb) {
 }
 
 RCT_EXPORT_METHOD(getData:(RCTResponseSenderBlock) cb) {
-    double pitch = (180/M_PI) * self->_motionManager.deviceMotion.attitude.pitch;
-    double roll = (180/M_PI) * self->_motionManager.deviceMotion.attitude.roll;
-    double yaw = (180/M_PI) * self->_motionManager.deviceMotion.attitude.yaw;
+    CMAcceleration gravity = self->_motionManager.deviceMotion.gravity;
+    float rotation = (180 / M_PI) * atan2(gravity.x, gravity.y);
+    if (rotation < 0) {
+        rotation = rotation + 180;
+    } else {
+        rotation = rotation - 180;
+    }
     double timestamp = self->_motionManager.deviceMotion.timestamp;
 
-    NSLog(@"getData: %f, %f, %f, %f", pitch, roll, yaw, timestamp);
+    NSLog(@"getData: %f, %f", rotation, timestamp);
 
     cb(@[[NSNull null], @{
-             @"pitch" : [NSNumber numberWithDouble:pitch],
-             @"roll" : [NSNumber numberWithDouble:roll],
-             @"yaw" : [NSNumber numberWithDouble:yaw],
+             @"rotation" : [NSNumber numberWithDouble:rotation],
              @"timestamp" : [NSNumber numberWithDouble:timestamp]
              }]
        );
@@ -80,18 +82,17 @@ RCT_EXPORT_METHOD(startUpdates) {
     [self->_motionManager startDeviceMotionUpdatesToQueue:[NSOperationQueue mainQueue]
                                                withHandler:^(CMDeviceMotion *deviceMotion, NSError *error)
      {
-         CMAttitude *attitude;
-         attitude = deviceMotion.attitude;
+         CMAcceleration gravity = deviceMotion.gravity;
+         float rotation = (180 / M_PI) * atan2(gravity.x, gravity.y);
+         if (rotation < 0) {
+             rotation = rotation + 180;
+         } else {
+             rotation = rotation - 180;
+         }
 
-         float pitch =  (180/M_PI) * attitude.pitch;
-         float roll = (180/M_PI) * attitude.roll;
-         float yaw = (180/M_PI) * attitude.yaw;
-
+         double timestamp = deviceMotion.timestamp;
          [self.bridge.eventDispatcher sendDeviceEventWithName:@"DeviceMotion" body:@{
-                                                                                  @"pitch" : [NSNumber numberWithDouble:pitch],
-                                                                                  @"roll" : [NSNumber numberWithDouble:roll],
-                                                                                  @"yaw" : [NSNumber numberWithDouble:yaw]
-                                                                                  }];
+                                                                                  @"rotation" : [NSNumber numberWithDouble:rotation], @"timestamp" : [NSNumber numberWithDouble:timestamp]}];
      }];
 
 }
